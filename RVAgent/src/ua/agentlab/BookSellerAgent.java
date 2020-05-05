@@ -1,19 +1,30 @@
 package ua.agentlab;
+//-gui test2:ua.agentlab.BookSellerAgent;test1:ua.agentlab.BookBuyerAgent(A_storm_of_swords);
 
 import java.util.Hashtable;
 
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
+import jade.domain.FIPANames.Ontology;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import ontology.BookTradingOntology;
 
 public class BookSellerAgent extends Agent {
 	private Hashtable catalogue;
 	private BookSellerGui myGui;
+	
+	private Codec codec = new SLCodec();
+	private Ontology ontology = (Ontology) BookTradingOntology.getInstance();
 
 	protected void setup() {
+		getContentManager().registerLanguage(codec);
+		getContentManager().registerOntology((jade.content.onto.Ontology) ontology);
+
 		catalogue = new Hashtable();
 		catalogue.put("A_storm_of_swords", 3);
 		
@@ -33,8 +44,8 @@ public class BookSellerAgent extends Agent {
             fe.printStackTrace();
         }
 		
-		addBehaviour(new OfferRequestsServer(catalogue));
-		addBehaviour(new PurchaseOrdersServer(catalogue));
+		//addBehaviour(new OfferRequestsServer(catalogue));
+		//addBehaviour(new PurchaseOrdersServer(catalogue));
 		
 		System.out.println("Seller-agent done: " + getAID());
 	}
@@ -52,4 +63,6 @@ public class BookSellerAgent extends Agent {
 			}
 		});
 	}
+	
+	
 }
