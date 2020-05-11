@@ -1,0 +1,15 @@
+package ua.agentlab;
+
+import jade.content.onto*;
+import jade.content.shema.*;
+
+public class BookTradingOntology {
+	public static final String ONTOLOGY_NAME = "Book-trading-ontology";
+	
+	//VOCABULARY
+	public static String BOOK = "Book";
+	public static String BOOK_TITLE = "title";
+	public static String BOOK_AUTHORS = "authors";
+	public static String BOOK_EDITR = "editor";
+	
+}

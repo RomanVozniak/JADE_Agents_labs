@@ -1,0 +1,2 @@
+private AID[] sellerAgents = {new AID(“seller1”, AID.ISLOCALNAME),
+new AID(“seller2”, AID.ISLOCALNAME)};

@@ -1,0 +1,27 @@
+package ua.agentlab;
+
+import jade.content.onto.*;
+import jade.content.shema.*;
+
+public class BookTradingOntology {
+	public static final String ONTOLOGY_NAME = "Book-trading-ontology";
+	
+	//VOCABULARY
+	public static String BOOK = "Book";
+	public static String BOOK_TITLE = "title";
+	public static String BOOK_AUTHORS = "authors";
+	public static String BOOK_EDITR = "editor";
+	
+	public static String COSTS = "Costs";
+	public static String COSTS_ITEM = "item";
+	public static String COSTS_PRICE = "price";
+	
+	public static final String SELL = "Sell";
+	public static final String SELL_ITEM = "item";
+	
+	private static Ontology theInstance = new BookTradingOntology();
+	
+	static Ontology getInstance() {
+		return theInstance;
+	}
+}

@@ -1,0 +1,380 @@
+  
+import jade.content.ContentElementList;   
+import jade.content.ContentManager;   
+import jade.content.lang.Codec;   
+import jade.content.lang.Codec.CodecException;   
+import jade.content.lang.sl.SLCodec;   
+import jade.content.onto.Ontology;   
+import jade.content.onto.OntologyException;   
+import jade.content.onto.basic.Action;   
+import jade.core.Agent;   
+import jade.core.AID;   
+import jade.core.behaviours.*;   
+import jade.lang.acl.*;   
+import jade.proto.ContractNetInitiator;   
+import jade.domain.*;   
+import jade.domain.FIPAAgentManagement.*;   
+import jade.util.leap.ArrayList;   
+   
+import java.util.Vector;   
+import java.util.Date;   
+   
+import ontology.*;   
+   
+public class BookBuyerAgent extends Agent {   
+    // The list of known seller agents   
+    private Vector<AID> sellerAgents = new Vector<AID>();   
+       
+    private Codec codec = new SLCodec();   
+    private Ontology ontology = BookTradingOntology.getInstance();   
+       
+    /**  
+    * Agent initializations  
+    */   
+    protected void setup() {   
+        getContentManager().registerLanguage(codec);   
+        getContentManager().registerOntology(ontology);   
+           
+        // Enable O2A communication   
+        setEnabledO2ACommunication(true, 0);   
+           
+        // Add the behaviour serving notifications from the external system   
+        addBehaviour(new CyclicBehaviour(this) {   
+            public void action() {   
+                BookInfo info = (BookInfo) myAgent.getO2AObject();   
+                if (info != null) {   
+                    purchase(info.getTitle(),   
+                            info.getBestPrice(),    
+                            info.getMaxPrice(),   
+                            info.getDeadline());   
+                }   
+                else {   
+                    block();   
+                }   
+            }   
+        });   
+           
+        // Update the list of seller agents every minute   
+        addBehaviour(new TickerBehaviour(this, 60000) {   
+            protected void onTick() {   
+                // Update the list of seller agents   
+                DFAgentDescription template = new DFAgentDescription();   
+                ServiceDescription sd = new ServiceDescription();   
+                sd.setType("Book-selling");   
+                template.addServices(sd);   
+                try {   
+                    DFAgentDescription[] result = DFService.search(   
+                            myAgent, template);   
+                    sellerAgents.clear();   
+                    for (int i = 0; i < result.length; ++i) {   
+                        sellerAgents.addElement(result[i].getName());   
+                    }   
+                }   
+                catch (FIPAException fe) {   
+                    fe.printStackTrace();   
+                }   
+            }              
+        } );   
+           
+        // Show the GUI to interact with the user   
+        myGui = new BookBuyerGuiImpl(this);   
+        myGui.show();   
+           
+        // Printout a welcome message   
+        System.out.println("Buyer-agent " + getAID().getName()   
+                + " is ready.");   
+    }   
+       
+    /**  
+    * Agent clean-up  
+    */   
+    protected void takeDown() {   
+        // Dispose the GUI if it is there   
+        if (myGui != null) {   
+            myGui.dispose();   
+        }   
+        // Printout a dismissal message   
+        System.out.println("Buyer-agent " + getAID().getName()   
+                + " terminated.");   
+    }   
+       
+    /**  
+    * This method is called by the GUI when the user inserts a new  
+    * book to buy  
+    * @param title The title of the book to buy  
+    * @param maxPrice The maximum acceptable price to buy the book  
+    * @param deadline The deadline by which to buy the book  
+    */   
+    public void purchase(String title, float bestPrice, float maxPrice, Date deadline) {   
+        // To be implemented   
+        addBehaviour(new PurchaseManager(this,   
+                title, bestPrice, maxPrice, deadline));   
+    }   
+       
+    private class PurchaseManager extends TickerBehaviour{   
+        private String title;   
+        private float maxPrice, deltaP;   
+        private long deadline, initTime, deltaT;   
+           
+        public PurchaseManager(Agent a, String t, float bp, float mp, Date d){   
+            super(a, 60000);    // tick every minute   
+            title = t;   
+            maxPrice = mp;   
+            deltaP = mp - bp;   
+            deadline = d.getTime();   
+            initTime = System.currentTimeMillis();   
+            deltaT = deadline - initTime;   
+        }   
+           
+        public void onTick(){   
+            long currentTime = System.currentTimeMillis();   
+            if(currentTime > deadline){   
+                // Deadline expired   
+                myGui.notifyUser("Cannot buy book:" + title);   
+                stop();   
+            } else {   
+                // Compute the currently acceptable price and start a negotiation   
+                long elapsedTime = currentTime - initTime;   
+                float acceptablePrice = maxPrice - deltaP * (1 - (float)((double)elapsedTime / (double)deltaT));   
+                myAgent.addBehaviour(new BookNegotiator(title, acceptablePrice, this));   
+            }   
+        }   
+    }   
+       
+    /**  
+     * Inner class BookNegotiator.  
+     * This is the behaviour used by Book-buyer agents to actually  
+     * negotiate with seller agents the purchase of a book.  
+     */   
+    private class BookNegotiator extends ContractNetInitiator {   
+        private String title;   
+        private float maxPrice;   
+        private PurchaseManager manager;   
+           
+        public BookNegotiator(String t, float p, PurchaseManager m){   
+            super(null, null);   
+            title = t;   
+            maxPrice = p;   
+            manager = m;   
+        }   
+           
+        protected Vector prepareCfps(ACLMessage cfp) {   
+            try {   
+                ContentManager cm = myAgent.getContentManager();   
+                   
+                ContentElementList cel = new ContentElementList();   
+                Book book = new Book();   
+                book.setTitle(title);   
+                book.setAuthors(new ArrayList());   
+                Sell sellAction = new Sell();   
+                sellAction.setItem(book);   
+                cel.add(new Action(getAID(), sellAction));   
+                   
+                cfp = new ACLMessage(ACLMessage.CFP);   
+                cfp.setLanguage(codec.getName());   
+                cfp.setOntology(ontology.getName());   
+                cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);   
+                cm.fillContent(cfp, cel);   
+            }   
+            catch (OntologyException oe) {   
+                oe.printStackTrace();   
+                cfp.setPerformative(ACLMessage.NOT_UNDERSTOOD);   
+                myGui.notifyUser("Call for proposal about Book "   
+                        + title + " can't be understood.");   
+            }   
+            catch (CodecException ce) {   
+                ce.printStackTrace();   
+                cfp.setPerformative(ACLMessage.NOT_UNDERSTOOD);   
+                myGui.notifyUser("Call for proposal about Book "   
+                        + title + " can't be understood.");   
+            }   
+               
+            if (cfp.getPerformative() == ACLMessage.CFP) {   
+                Vector v = new Vector();   
+                for (int i = 0; i < sellerAgents.size(); ++i) {   
+                    cfp.addReceiver((AID)sellerAgents.get(i));   
+                }                  
+                v.add(cfp);   
+                return v;   
+            }   
+            else {   
+                return null;   
+            }              
+        }   
+           
+        protected void handleAllResponses(Vector responses,   
+                Vector acceptances) {   
+            ACLMessage bestOffer = null;   
+            float bestPrice = -1;   
+               
+            ContentManager cm = myAgent.getContentManager();   
+            for (int i = 0; i < responses.size(); ++i) {   
+                ACLMessage rsp = (ACLMessage) responses.get(i);   
+                if (rsp.getPerformative() == ACLMessage.PROPOSE) {   
+                    try {   
+                        ContentElementList cel =   
+                            (ContentElementList)cm.extractContent(rsp);   
+                        Costs costs = (Costs)cel.get(1);   
+                        float price = costs.getPrice();   
+                        if (bestOffer == null || price < bestPrice) {   
+                            bestOffer = rsp;   
+                            bestPrice = price;   
+                        }   
+                    }   
+                    catch (OntologyException oe) {   
+                        oe.printStackTrace();   
+                        myGui.notifyUser("proposal about Book "   
+                                + title + " from " + rsp.getSender()   
+                                + " can't be understood.");   
+                    }   
+                    catch (CodecException ce) {   
+                        ce.printStackTrace();   
+                        myGui.notifyUser("proposal about Book "   
+                                + title + " from " + rsp.getSender()   
+                                + " can't be understood.");   
+                    }                      
+                }   
+            }   
+               
+            if (bestOffer != null && bestPrice <= maxPrice) {   
+                ACLMessage accept = bestOffer.createReply();   
+                accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);   
+                accept.setContent(bestOffer.getContent());   
+                acceptances.add(accept);   
+            }   
+        }   
+           
+        protected void handleInform(ACLMessage inform) {   
+            // Book successfully purchased   
+            try {   
+                ContentManager cm = myAgent.getContentManager();   
+                ContentElementList cel =   
+                    (ContentElementList)cm.extractContent(inform);   
+                Costs costs = (Costs)cel.get(1);   
+                float price = costs.getPrice();   
+                myGui.notifyUser("Book " + title   
+                        + " successfully purchased. Price = " + price);   
+                manager.stop();   
+            }   
+            catch (OntologyException oe) {   
+                oe.printStackTrace();   
+                myGui.notifyUser("inform about Book "   
+                        + title + " from " + inform.getSender()   
+                        + " can't be understood.");   
+            }   
+            catch (CodecException ce) {   
+                ce.printStackTrace();   
+                myGui.notifyUser("inform about Book "   
+                        + title + " from " + inform.getSender()   
+                        + " can't be understood.");   
+            }   
+        }   
+    } // End of inner class BookNegotiator   
+       
+    /*private class BookNegotiator extends Behaviour{  
+        private String title;  
+        private float maxPrice;  
+        private PurchaseManager manager;  
+          
+        private AID bestSeller; // The seller agent who provides the best offer  
+        private float bestPrice;    //The best offered price  
+        private float repliesCnt = 0;   // The counter of replies from seller agents  
+        private MessageTemplate mt; // The template to receive replies  
+        private int step = 0;  
+          
+        public BookNegotiator(String t, float p, PurchaseManager m){  
+            super(null);  
+            title = t;  
+            maxPrice = p;  
+            manager = m;  
+        }  
+          
+        public void action() {  
+            switch (step) {  
+            case 0:  
+                // Send the cfp to all sellers  
+                ACLMessage cfp = new ACLMessage(ACLMessage.CFP);  
+                for (int i = 0; i < sellerAgents.size(); ++i) {  
+                    cfp.addReceiver(sellerAgents.get(i));  
+                }  
+                cfp.setContent(title);  
+                cfp.setConversationId("book-trade");  
+                cfp.setReplyWith("cfp" + System.currentTimeMillis());   // Unique value  
+                myAgent.send(cfp);  
+                // Prepare the template to get proposals  
+                mt = MessageTemplate.and(  
+                        MessageTemplate.MatchConversationId("book-trade"),  
+                        MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));  
+                step = 1;  
+                break;  
+            case 1:  
+                // Receive all proposals/refusals from seller agents  
+                ACLMessage reply = myAgent.receive(mt);  
+                if (reply != null) {  
+                    // Reply received  
+                    if (reply.getPerformative() == ACLMessage.PROPOSE) {  
+                        // This is an offer  
+                        float price = Float.parseFloat(reply.getContent());  
+                        if (bestSeller == null || price < bestPrice) {  
+                            // This is the best offer at present  
+                            bestPrice = price;  
+                            bestSeller = reply.getSender();  
+                        }  
+                    }  
+                    repliesCnt++;  
+                    if (repliesCnt >= sellerAgents.size()) {  
+                        // We received all replies  
+                        step = 2;  
+                    }  
+                }  
+                else {  
+                    block();  
+                }  
+                break;  
+            case 2:  
+                if (bestSeller != null && bestPrice <= maxPrice) {  
+                    // Send the purchase order to the seller that provided the best offer  
+                    ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);  
+                    order.addReceiver(bestSeller);  
+                    order.setContent(title);  
+                    order.setConversationId("book-trade");  
+                    order.setReplyWith("order" + System.currentTimeMillis());  
+                    myAgent.send(order);  
+                    // Prepare the template to get the purchase order reply  
+                    mt = MessageTemplate.and(  
+                            MessageTemplate.MatchConversationId("book-trade"),  
+                            MessageTemplate.MatchInReplyTo(order.getReplyWith()));  
+                    step = 3;  
+                }  
+                else {  
+                    // If we received no acceptable proposals, terminate  
+                    step = 4;  
+                }  
+                break;  
+            case 3:  
+                // Receive the purchase order reply  
+                reply = myAgent.receive(mt);  
+                if (reply != null) {  
+                    // Purchase order reply received  
+                    if (reply.getPerformative() == ACLMessage.INFORM) {  
+                        // Purchase successful. We can terminate  
+                        myGui.notifyUser("Book " + title  
+                                + " successfully purchased."  
+                                +   "price = " + bestPrice);  
+                        manager.stop();  
+                    }  
+                    step = 4;  
+                }  
+                else {  
+                    block();  
+                }  
+                break;  
+            }  
+        }  
+              
+        public boolean done() {  
+            return step == 4;  
+        }  
+    } // End of inner class BookNegotiator  
+*/     
+}   

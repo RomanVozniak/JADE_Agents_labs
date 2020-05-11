@@ -1,0 +1,102 @@
+package ua.agentlab;
+
+import java.util.Hashtable;
+
+import jade.core.behaviours.CyclicBehaviour;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+import jade.content.onto.OntologyException;
+import jade.content.onto.basic.Action;
+import ontology.Book;
+import jade.content.ContentElementList;
+import jade.content.ContentManager;
+import jade.content.lang.Codec.CodecException;
+import ontology.Costs;
+import ontology.Sell;
+
+public class OfferRequestsServer extends CyclicBehaviour {
+	
+	private Hashtable _catalogue;
+	private MessageTemplate _msgTemplate = MessageTemplate.MatchPerformative(ACLMessage.CFP);
+	
+	OfferRequestsServer(Hashtable catalogue){
+		_catalogue = catalogue;
+	}
+	
+	public void action() {
+		ACLMessage msg = myAgent.receive(_msgTemplate);
+		
+		System.out.println("OfferRequestsServer");
+
+		if (msg != null) {
+			ACLMessage reply = msg.createReply();
+
+			try {
+				ContentManager cm = myAgent.getContentManager();
+				Action act = (Action) cm.extractContent(msg);
+				Sell sellAction = (Sell) act.getAction();
+				Book book = sellAction.getItem();
+				
+				
+				String title = msg.getContent();
+				
+				Integer price = (Integer) _catalogue.get(title);
+
+				if (price != null) {
+					reply.setPerformative(ACLMessage.PROPOSE);
+					reply.setContent(String.valueOf(price.intValue()));
+				}
+				else {
+					reply.setPerformative(ACLMessage.REFUSE);
+					reply.setContent("not-available");
+				}
+			}
+			catch(Exception ex) {
+				reply.setPerformative(ACLMessage.REFUSE);
+				reply.setContent("not-available");
+			}
+			myAgent.send(reply);
+		}
+		else {
+			block();
+		}
+	}
+	
+	private class CallForOfferServer extends CyclicBehaviour {
+		public void action() {
+			ACLMessage msg = myAgent.receive();
+			if (msg != null) {
+				// Message received. Process it ACLMessage
+				ACLMessage reply = msg.createReply(); try {
+					ContentManager cm = myAgent.getContentManager();
+					Action act = (Action) cm.extractContent(msg);
+					Sell sellAction = (Sell) act.getAction();
+					Book book = sellAction.getItem();
+					Integer pm = (Integer) _catalogue.get(book.getTitle());
+					if (pm != null) {
+						// The requested book is available for sale
+						reply.setPerformative(ACLMessage.PROPOSE);
+						ContentElementList cel = new ContentElementList();
+						cel.add(act);
+						Costs costs = new Costs();
+						costs.setItem(book);
+						costs.setPrice(pm);
+						cel.add(costs);
+						cm.fillContent(reply, cel);
+					}
+					else {
+						// The requested book is NOT available for sale.
+						reply.setPerformative(ACLMessage.REFUSE);
+					}
+				}
+				catch (OntologyException oe) { oe.printStackTrace(); 
+				reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+				}
+				catch (CodecException ce) { ce.printStackTrace();
+				reply.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+				}
+				myAgent.send(reply);
+			}
+		}
+	} // End of inner class CallForOfferServer
+}

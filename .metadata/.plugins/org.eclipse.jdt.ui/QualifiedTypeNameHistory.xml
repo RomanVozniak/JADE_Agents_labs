@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+<fullyQualifiedTypeName name="jade.core.Agent"/>
+<fullyQualifiedTypeName name="java.util.Hashtable"/>
+<fullyQualifiedTypeName name="jade.core.AID"/>
+<fullyQualifiedTypeName name="ua.agentlab.BookSellerGui"/>
+<fullyQualifiedTypeName name="jade.core.behaviours.Behaviour"/>
+<fullyQualifiedTypeName name="jade.content.onto.Ontology"/>
+<fullyQualifiedTypeName name="java.awt.print.Book"/>
+<fullyQualifiedTypeName name="jade.content.schema.ConceptSchema"/>
+<fullyQualifiedTypeName name="jade.content.lang.Codec"/>
+<fullyQualifiedTypeName name="ontology.BookTradingOntology"/>
+<fullyQualifiedTypeName name="jade.content.lang.sl.SLCodec"/>
+<fullyQualifiedTypeName name="jade.domain.FIPANames.Ontology"/>
+<fullyQualifiedTypeName name="jade.content.AgentAction"/>
+<fullyQualifiedTypeName name="jade.content.onto.OntologyException"/>
+<fullyQualifiedTypeName name="jade.core.behaviours.TickerBehaviour"/>
+<fullyQualifiedTypeName name="java.util.Date"/>
+<fullyQualifiedTypeName name="jade.core.behaviours.CyclicBehaviour"/>
+<fullyQualifiedTypeName name="jade.lang.acl.MessageTemplate"/>
+<fullyQualifiedTypeName name="jade.lang.acl.ACLMessage"/>
+<fullyQualifiedTypeName name="jade.domain.FIPANames"/>
+<fullyQualifiedTypeName name="jade.content.ContentManager"/>
+<fullyQualifiedTypeName name="jade.content.onto.basic.Action"/>
+<fullyQualifiedTypeName name="ontology.Sell"/>
+<fullyQualifiedTypeName name="ontology.Book"/>
+<fullyQualifiedTypeName name="jade.content.ContentElementList"/>
+<fullyQualifiedTypeName name="ontology.Costs"/>
+<fullyQualifiedTypeName name="jade.content.lang.Codec.CodecException"/>
+<fullyQualifiedTypeName name="jade.proto.SSContractNetResponder"/>
+</qualifiedTypeNameHistroy>

@@ -1,0 +1,8 @@
+package ontology;
+
+import jade.content.Concept;
+import jade.util.leap.List;
+
+public class Book {
+
+}

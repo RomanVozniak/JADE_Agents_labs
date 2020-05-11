@@ -1,0 +1,41 @@
+package ontology;
+
+import jade.content.onto.*;
+import jade.content.schema.*;
+
+public class BookTradingOntology {
+	public static final String ONTOLOGY_NAME = "Book-trading-ontology";
+	
+	//VOCABULARY
+	public static String BOOK = "Book";
+	public static String BOOK_TITLE = "title";
+	public static String BOOK_AUTHORS = "authors";
+	public static String BOOK_EDITR = "editor";
+	
+	public static String COSTS = "Costs";
+	public static String COSTS_ITEM = "item";
+	public static String COSTS_PRICE = "price";
+	
+	public static final String SELL = "Sell";
+	public static final String SELL_ITEM = "item";
+	
+	private static Ontology theInstance = new BookTradingOntology();
+	
+	static Ontology getInstance() {
+		return theInstance;
+	}
+	
+	private BookTradingOntology() {
+		// The Book-trading ontology extends the basic ontology
+		super(ONTOLOGY_NAME, BasicOntology.getInstance());
+		try {
+			add(new ConceptSchema(BOOK), Book.class);
+			add(new PredicateSchema(COSTS), Costs.class);
+			add(new AgentActionSchema(SELL), Sell.class);
+		} 
+		catch(OntologyException oe) {
+			oe.printStackTrace();
+		}
+	}
+		
+}

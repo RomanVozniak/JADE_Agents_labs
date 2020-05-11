@@ -23,7 +23,7 @@ public class RequestPerformer extends Behaviour {
 	
 	public void action() {
 		switch (step) {
-			case 0:
+			case 0:				
 				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
 				for (int i = 0; i < _sellerAgents.length; ++i) {
 					cfp.addReceiver(_sellerAgents[i]);

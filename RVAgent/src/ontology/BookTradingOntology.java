@@ -14,14 +14,14 @@ public class BookTradingOntology extends Ontology {
 	}
 	
 	//VOCABULARY
-	public static String BOOK = "Book";
-	public static String BOOK_TITLE = "title";
-	public static String BOOK_AUTHORS = "authors";
-	public static String BOOK_EDITOR = "editor";
+	public static final String BOOK = "Book";
+	public static final String BOOK_TITLE = "title";
+	public static final String BOOK_AUTHORS = "authors";
+	public static final String BOOK_EDITOR = "editor";
 	
-	public static String COSTS = "Costs";
-	public static String COSTS_ITEM = "item";
-	public static String COSTS_PRICE = "price";
+	public static final String COSTS = "Costs";
+	public static final String COSTS_ITEM = "item";
+	public static final String COSTS_PRICE = "price";
 	
 	public static final String SELL = "Sell";
 	public static final String SELL_ITEM = "item";
@@ -41,17 +41,14 @@ public class BookTradingOntology extends Ontology {
 			cs.add(BOOK_TITLE, (PrimitiveSchema)
 					getSchema(BasicOntology.STRING));
 			cs.add(BOOK_AUTHORS, (PrimitiveSchema)
-					getSchema(BasicOntology.STRING), 0,
-					ObjectSchema.UNLIMITED);
+					getSchema(BasicOntology.STRING));
 			cs.add(BOOK_EDITOR, (PrimitiveSchema)
 					getSchema(BasicOntology.STRING), ObjectSchema.OPTIONAL);
 			
 			// Structure of the schema for the Costs predicate
-			PredicateSchema ps = (PredicateSchema) getSchema(COSTS);
-			ps.add(COSTS_ITEM, (PrimitiveSchema)
-					getSchema(BasicOntology.STRING), ObjectSchema.OPTIONAL);
-			ps.add(COSTS_PRICE, (PrimitiveSchema)
-					getSchema(BasicOntology.INTEGER), ObjectSchema.OPTIONAL);
+			PredicateSchema ps = (PredicateSchema) getSchema(COSTS);   
+            ps.add(COSTS_ITEM, (ConceptSchema)getSchema(BOOK));   
+            ps.add(COSTS_PRICE, getSchema(BasicOntology.INTEGER));
 			
 			// Structure of the schema for the Sell agent action
 			AgentActionSchema as = (AgentActionSchema) getSchema(SELL);

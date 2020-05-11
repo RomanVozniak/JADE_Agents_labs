@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item key="wrap" value="true"/>
+		<item key="casesensitive" value="false"/>
+		<item key="wholeword" value="false"/>
+		<item key="incremental" value="false"/>
+		<item key="isRegEx" value="false"/>
+		<item key="selection" value="600"/>
+		<list key="findhistory">
+			<item value="600"/>
+			<item value="ContentElementList"/>
+			<item value="has been sold"/>
+			<item value="putForSale"/>
+			<item value="PriceManager"/>
+			<item value="updateCatalogue"/>
+			<item value="addBehaviour(new PriceManager"/>
+			<item value="purchase"/>
+			<item value="PurchaseManager"/>
+			<item value="book1"/>
+			<item value="book"/>
+			<item value="catalogue"/>
+			<item value="CallForOfferServer"/>
+			<item value="OfferRequestsServer"/>
+			<item value="BookNegotiator"/>
+		</list>
+		<list key="replacehistory">
+			<item value="_sellerAgents"/>
+			<item value=""/>
+			<item value="_msgTemplate"/>
+			<item value="repliesCount"/>
+			<item value="bestOfferPrice"/>
+			<item value="bestOfferSeller"/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item key="DIALOG_X_ORIGIN" value="925"/>
+		<item key="DIALOG_Y_ORIGIN" value="114"/>
+		<item key="DIALOG_WIDTH" value="284"/>
+		<item key="DIALOG_HEIGHT" value="391"/>
+		<item key="DIALOG_FONT_NAME" value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI"/>
+	</section>
+</section>
