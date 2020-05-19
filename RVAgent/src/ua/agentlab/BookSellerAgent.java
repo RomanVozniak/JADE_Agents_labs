@@ -129,8 +129,7 @@ public class BookSellerAgent extends Agent {
 			return isDone;
         }
            
-        public void action(){   
-        	System.out.println("CallForOfferServer");
+        public void action(){
             ACLMessage cfp = myAgent.receive(mt);   
             if(cfp != null) {   
                 // Message received.Process it   
@@ -228,7 +227,6 @@ public class BookSellerAgent extends Agent {
 		}
 		
 	    public void action() {
-	    	System.out.println("PurchaseOrdersServer");
 //	        ACLMessage msg = _myAgent.receive(_msgTemplate);
 //	        if (msg != null) {
 //	            String bookTitle = msg.getContent();

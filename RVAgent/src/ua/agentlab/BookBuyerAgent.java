@@ -37,46 +37,79 @@ public class BookBuyerAgent extends Agent {
         getContentManager().registerOntology(ontology);
            
         // Enable O2A communication   
-        setEnabledO2ACommunication(true, 0);   
+        setEnabledO2ACommunication(true, 0);
            
         // Update the list of seller agents every minute
-        addBehaviour(new TickerBehaviour(this, 600) {   
-            protected void onTick() {   
-                // Update the list of seller agents   
-                DFAgentDescription template = new DFAgentDescription();   
-                ServiceDescription sd = new ServiceDescription();   
-                sd.setType("Book-selling");   
-                template.addServices(sd);   
-                try {   
-                    DFAgentDescription[] result = DFService.search(   
-                            myAgent, template);   
-                    sellerAgents.clear();   
-                    for (int i = 0; i < result.length; ++i) {   
-                        sellerAgents.addElement(result[i].getName());   
-                    }   
-                }   
-                catch (FIPAException fe) {   
-                    fe.printStackTrace();   
-                }   
-            }              
-        });
-        purchase("A_storm_of_swords", 10);
+//        addBehaviour(new TickerBehaviour(this, 600) {   
+//            protected void onTick() {   
+//                // Update the list of seller agents   
+//                DFAgentDescription template = new DFAgentDescription();   
+//                ServiceDescription sd = new ServiceDescription();   
+//                sd.setType("Book-selling");   
+//                template.addServices(sd);   
+//                try {   
+//                    DFAgentDescription[] result = DFService.search(myAgent, template);   
+//                    sellerAgents.clear();   
+//                    for (int i = 0; i < result.length; ++i) {   
+//                        sellerAgents.addElement(result[i].getName());   
+//                    }   
+//                }   
+//                catch (FIPAException fe) {   
+//                    fe.printStackTrace();   
+//                }   
+//            }              
+//        });
+        String bookTitle = "A_storm_of_swords";
+        int price = 10;
+        
+        FSMBehaviour sampleFSM = new FSMBehaviour(this);
+        sampleFSM.registerFirstState(new AgentsSeeker(), "X");
+        sampleFSM.registerLastState(new PurchaseManager(this, bookTitle, price), "Y");
+        sampleFSM.registerTransition("X", "Y", 1);
+        sampleFSM.registerTransition("X", "X", 0);
+        addBehaviour(sampleFSM);
            
-        // Printout a welcome message   
         System.out.println("Buyer-agent " + getAID().getName() + " is ready.");   
+    }
+    
+    private class AgentsSeeker extends Behaviour {
+		@Override
+		public void action() {
+			// Update the list of seller agents   
+            DFAgentDescription template = new DFAgentDescription();   
+            ServiceDescription sd = new ServiceDescription();   
+            sd.setType("Book-selling");   
+            template.addServices(sd);   
+            try {   
+                DFAgentDescription[] result = DFService.search(myAgent, template);   
+                sellerAgents.clear();   
+                for (int i = 0; i < result.length; ++i) {   
+                    sellerAgents.addElement(result[i].getName());   
+                }   
+                System.out.println("AgentsSeeker. Founded agents: " + sellerAgents.size());  
+                
+            }   
+            catch (FIPAException fe) {   
+                fe.printStackTrace();   
+            }   
+		}
+
+		@Override
+		public boolean done() {
+			return true;
+		}
+    	
+		public int onEnd() {
+			System.out.println("AgentsSeeker. onEnd: " + (sellerAgents.size() > 0 ? 1 : 0));
+			System.out.println("Next start PurchaseManager ");
+			return sellerAgents.capacity() > 0 ? 1 : 0;
+		}
     }
     
     protected void takeDown() {  
         System.out.println("Buyer-agent " + getAID().getName() + " terminated.");   
     }
-       
-    /**  
-    * This method is called by the GUI when the user inserts a new  
-    * book to buy  
-    * @param title The title of the book to buy  
-    * @param maxPrice The maximum acceptable price to buy the book  
-    * @param deadline The deadline by which to buy the book  
-    */   
+    
     public void purchase(String title, int price) {   
         addBehaviour(new PurchaseManager(this, title, price));   
     }   
@@ -88,22 +121,15 @@ public class BookBuyerAgent extends Agent {
         public PurchaseManager(Agent agent, String title, int price){   
             super(agent, 600);    // tick every minute   
             this.title = title;   
-            this.price = price;  
+            this.price = price;
         }   
            
-        public void onTick(){   
-            long currentTime = System.currentTimeMillis();  
-            // Compute the currently acceptable price and start a negotiation  
-            myAgent.addBehaviour(new BookNegotiator(title, price, this));  
-            
+        public void onTick(){ 
+        	System.out.println("PurchaseManager is starting");
+            myAgent.addBehaviour(new BookNegotiator(title, price, this));
         }   
     }   
        
-    /**  
-     * Inner class BookNegotiator.  
-     * This is the behaviour used by Book-buyer agents to actually  
-     * negotiate with seller agents the purchase of a book.  
-     */   
     private class BookNegotiator extends ContractNetInitiator {   
         private String title;   
         private int price;   
@@ -114,7 +140,7 @@ public class BookBuyerAgent extends Agent {
             this.title = title;   
             this.price = price;   
             this.manager = manager;   
-        }   
+        }
            
         protected Vector prepareCfps(ACLMessage cfp) {   
             try {   
@@ -134,7 +160,7 @@ public class BookBuyerAgent extends Agent {
                 cfp.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);   
                 cm.fillContent(cfp, cel);   
             }   
-            catch (OntologyException oe) {   
+            catch (OntologyException oe) {
                 oe.printStackTrace();   
                 cfp.setPerformative(ACLMessage.NOT_UNDERSTOOD);
                 System.out.println();
@@ -159,8 +185,7 @@ public class BookBuyerAgent extends Agent {
             }              
         }   
            
-        protected void handleAllResponses(Vector responses,   
-                Vector acceptances) {   
+        protected void handleAllResponses(Vector responses, Vector acceptances) {   
             ACLMessage bestOffer = null;   
             float bestPrice = -1;   
                
@@ -205,6 +230,7 @@ public class BookBuyerAgent extends Agent {
                     (ContentElementList)cm.extractContent(inform);   
                 Costs costs = (Costs)cel.get(1);   
                 float price = costs.getPrice();   
+                System.out.println("PurchaseManager is done: " + true); 
                 System.out.println("Book " + title   
                         + " successfully purchased. Price = " + price);   
                 manager.stop();   
